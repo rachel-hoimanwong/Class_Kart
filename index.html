@@ -4,33 +4,24 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>3C 賽車場：開放地圖</title>
-
-<!-- ============================================================
-     Tailwind CSS（用於快速排版）
-     ============================================================ -->
 <script src="https://cdn.tailwindcss.com"></script>
-
 <style>
 /* ============================================================
    1. 全域設定
    ============================================================ */
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
-
-* {
-  box-sizing: border-box;
-}
-
+* { box-sizing: border-box; }
 body {
   font-family: 'Noto Sans TC', sans-serif;
   margin: 0;
-  overflow: hidden;              /* 禁止頁面捲動，地圖自己捲 */
+  overflow: hidden;
   background: #0f172a;
   color: #fff;
   -webkit-tap-highlight-color: transparent;
 }
 
 /* ============================================================
-   2. 地圖視窗（固定大小，等於螢幕）
+   2. 地圖視窗
    ============================================================ */
 #mapViewport {
   position: relative;
@@ -38,10 +29,12 @@ body {
   height: 100vh;
   overflow: hidden;
   background: linear-gradient(180deg, #87ceeb 0%, #c9e4f0 40%, #a8d5a2 100%);
+  cursor: grab;
 }
+#mapViewport:active { cursor: grabbing; }
 
 /* ============================================================
-   3. 地圖內層（會被 translate + scale 移動/縮放）
+   3. 地圖內層
    ============================================================ */
 #mapWorld {
   position: absolute;
@@ -49,11 +42,11 @@ body {
   left: 0;
   height: 100%;
   will-change: transform;
-  transition: transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transition: transform 0.1s linear;  /* 拖動時要快，唔好太慢 */
 }
 
 /* ============================================================
-   4. 地形帶（橫向分段，用色塊表示不同地形）
+   4. 地形帶
    ============================================================ */
 .terrain-band {
   position: absolute;
@@ -69,7 +62,7 @@ body {
 }
 
 /* ============================================================
-   5. 裝飾物（隨機散落在地圖上的 emoji）
+   5. 裝飾物
    ============================================================ */
 .deco {
   position: absolute;
@@ -78,7 +71,6 @@ body {
   user-select: none;
   animation: float 4s ease-in-out infinite;
 }
-
 @keyframes float {
   0%, 100% { transform: translateY(0); }
   50%      { transform: translateY(-6px); }
@@ -97,8 +89,6 @@ body {
   cursor: pointer;
   filter: drop-shadow(0 3px 3px rgba(0,0,0,0.4));
 }
-
-/* 賽車名稱標籤 */
 .racer .label {
   position: absolute;
   top: 100%;
@@ -113,26 +103,18 @@ body {
   margin-top: 2px;
   color: #fff;
 }
-
-/* 領先者：金色標籤 */
-.racer.leader .label {
-  background: #ffd700;
-  color: #000;
-}
-
-/* 中招（今日扣分）：紅色抖動 */
+.racer.leader .label { background: #ffd700; color: #000; }
 .racer.hit {
   animation: hitShake 0.4s infinite;
   filter: drop-shadow(0 0 8px #ef4444);
 }
-
 @keyframes hitShake {
   0%, 100% { transform: translate(-50%,-50%) rotate(-8deg); }
   50%      { transform: translate(-50%,-50%) rotate(8deg); }
 }
 
 /* ============================================================
-   7. HUD（畫面頂部資訊列）
+   7. HUD
    ============================================================ */
 #hud {
   position: fixed;
@@ -151,11 +133,10 @@ body {
   backdrop-filter: blur(6px);
   white-space: nowrap;
 }
-
 #hud b { color: #ffd700; }
 
 /* ============================================================
-   8. 圖例（左下角）
+   8. 圖例
    ============================================================ */
 #legend {
   position: fixed;
@@ -170,9 +151,10 @@ body {
   line-height: 1.7;
   backdrop-filter: blur(6px);
 }
+#legend a { color: #00e5ff; text-decoration: none; }
 
 /* ============================================================
-   9. 更新按鈕（右下角）
+   9. 更新按鈕
    ============================================================ */
 #refreshBtn {
   position: fixed;
@@ -188,13 +170,12 @@ body {
   font-family: 'Noto Sans TC', sans-serif;
   box-shadow: 0 0 20px #00e5ff;
   cursor: pointer;
-  z-index: 999;
+  z-index: 999999;
 }
-
 #refreshBtn:active { transform: scale(0.92); }
 
 /* ============================================================
-   10. 中招抽懲罰 Modal
+   10. 中招 Modal
    ============================================================ */
 .modal-overlay {
   position: fixed;
@@ -203,12 +184,10 @@ body {
   display: none;
   justify-content: center;
   align-items: center;
-  z-index: 9999;
+  z-index: 99999;
   padding: 20px;
 }
-
 .modal-overlay.active { display: flex; }
-
 .modal-content {
   background: linear-gradient(135deg,#1e293b,#0f172a);
   border: 3px solid #ffd700;
@@ -222,12 +201,10 @@ body {
   max-height: 90vh;
   overflow-y: auto;
 }
-
 @keyframes popIn {
   from { transform: scale(0.6); opacity: 0; }
   to   { transform: scale(1);   opacity: 1; }
 }
-
 .punishment-list {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -239,7 +216,6 @@ body {
   background: rgba(0,0,0,0.3);
   border-radius: 10px;
 }
-
 .punishment-item {
   font-size: 0.72rem;
   padding: 6px 8px;
@@ -249,12 +225,7 @@ body {
   text-align: left;
   color: #cbd5e1;
 }
-
-.punishment-item.locked {
-  opacity: 0.3;
-  text-decoration: line-through;
-}
-
+.punishment-item.locked { opacity: 0.3; text-decoration: line-through; }
 .open-btn {
   font-size: 1.2rem;
   font-weight: 900;
@@ -268,12 +239,10 @@ body {
   font-family: 'Noto Sans TC', sans-serif;
   animation: pulse 1.5s infinite;
 }
-
 @keyframes pulse {
   0%, 100% { transform: scale(1); }
   50%      { transform: scale(1.05); }
 }
-
 .close-btn {
   margin-top: 14px;
   padding: 10px 26px;
@@ -287,39 +256,39 @@ body {
 }
 
 /* ============================================================
-   11. 診斷面板（測試用，可之後移除）
+   11. 診斷面板（測試用）
    ============================================================ */
 #racerDebugPanel {
   position: fixed;
-  bottom: 80px;
-  right: 12px;
+  bottom: 200px;       /* 改高，避免同 refreshBtn / debugToggle 重疊 */
+  right: 14px;
   background: rgba(0,0,0,0.85);
   border: 1px solid #00e5ff;
   border-radius: 8px;
   padding: 8px 10px;
   font-size: 10px;
   color: #0f0;
-  z-index: 99998;
+  z-index: 999998;
   max-height: 40vh;
   overflow-y: auto;
   font-family: monospace;
   line-height: 1.5;
   min-width: 200px;
 }
-
 #debugToggle {
   position: fixed;
-  bottom: 80px;
-  right: 12px;
-  padding: 6px 10px;
+  bottom: 140px;
+  right: 14px;
+  padding: 8px 12px;
   background: #00e5ff;
   color: #000;
   border: none;
   border-radius: 6px;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: bold;
   cursor: pointer;
-  z-index: 99999;
+  z-index: 999999;
+  pointer-events: auto;
   display: none;
 }
 </style>
@@ -327,42 +296,24 @@ body {
 
 <body>
 
-<!-- ============================================================
-     地圖本體
-     ============================================================ -->
 <div id="mapViewport">
   <div id="mapWorld"></div>
 </div>
 
-<!-- ============================================================
-     HUD：顯示領先者與顯示範圍
-     ============================================================ -->
 <div id="hud">
   <span>🏁 領先：<b id="hudLeader">—</b></span>
   <span>📏 顯示：<b id="hudRange">—</b></span>
 </div>
 
-<!-- ============================================================
-     圖例
-     ============================================================ -->
 <div id="legend">
   🌿 草原　🌲 森林　🌋 火山　❄️ 雪山　🏰 城堡<br>
-  每 1 分 = 10 步 ｜ 扣分 = 後退
+  每 1 分 = 10 步 ｜ 扣分 = 後退<br>
+  <a href="admin.html">🔧 老師後台</a>
 </div>
 
-<!-- ============================================================
-     手動更新按鈕
-     ============================================================ -->
 <button id="refreshBtn" onclick="fetchStudents()">🔄 更新</button>
-
-<!-- ============================================================
-     診斷面板開關（測試用）
-     ============================================================ -->
 <button id="debugToggle" onclick="toggleDebugPanel()">🔍 診斷</button>
 
-<!-- ============================================================
-     中招抽懲罰 Modal
-     ============================================================ -->
 <div class="modal-overlay" id="hitModal">
   <div class="modal-content">
     <h2 style="font-size:1.6rem;font-weight:900;color:#ffd700;margin-bottom:6px;">💥 中招！</h2>
@@ -377,56 +328,47 @@ body {
 
 <script>
 /* ============================================================
-   A. 全域設定（呢度改參數）
+   A. 全域設定
    ============================================================ */
 
-// ★★★ Apps Script Web App 網址 ★★★
-const API_URL = 'https://script.google.com/macros/s/AKfycbylCeRYjGoQajZ7XZIm6E5zWXxmXDMbegq0lv51Xg1Am0_Mq4TxaCtKZREBYUawn6W2dw/exec';
+// ★★★ 呢條要同 admin.html 一樣！ ★★★
+const API_URL = 'https://script.google.com/macros/s/AKfycbyYVj27sGs8M_RitHbWM-kMLUq0to4lai3S40O6Qt4Wd4Wt7gJqGGlZ7ZPYbNgW8DTC/exec';
 
-// 排除嘅學生 id（楊卓衡 = 16）
 const EXCLUDED_IDS = ['16'];
-
-// 換算：1 分 = 10 步
 const STEPS_PER_POINT = 10;
-
-// 顯示區間前後緩衝（步數）
-const BUFFER_BEHIND = 10;   // 最慢者後方留 10 步
-const BUFFER_AHEAD  = 15;   // 最快者前方留 15 步
-
-// 每步佔幾多 px（越大車越散）
+const BUFFER_BEHIND = 10;
+const BUFFER_AHEAD  = 15;
 const PIXELS_PER_STEP = 30;
 
-// 地形分區（按總步數）
 const TERRAINS = [
-  { name: '草原', from: -Infinity, to: 200,      emoji: '🌿', color: '#7ec850' },
-  { name: '森林', from: 200,       to: 500,      emoji: '🌲', color: '#2d5a3d' },
-  { name: '火山', from: 500,       to: 900,      emoji: '🌋', color: '#5a2d2d' },
-  { name: '雪山', from: 900,       to: 1300,     emoji: '❄️', color: '#dbeafe' },
-  { name: '城堡', from: 1300,      to: Infinity, emoji: '🏰', color: '#ffd700' },
+  { name: '草原', from: -Infinity, to: 200,      color: '#7ec850' },
+  { name: '森林', from: 200,       to: 500,      color: '#2d5a3d' },
+  { name: '火山', from: 500,       to: 900,      color: '#5a2d2d' },
+  { name: '雪山', from: 900,       to: 1300,     color: '#dbeafe' },
+  { name: '城堡', from: 1300,      to: Infinity, color: '#ffd700' },
 ];
 
-// 賽車 emoji（之後可換成圖片）
 const CAR_EMOJIS = ['🏎️','🚗','🚙','🚕','🚌','🚐','🚑','🚒','🚓','🚚','🚛','🚜','🛻','🚔','🚘','🚖'];
 
 /* ============================================================
    B. 全域變數
    ============================================================ */
-let students = [];            // 從 API 抓到嘅學生資料
-let mapOffsetX = 0;           // 地圖當前 translateX
-let minStepGlobal = 0;        // 全域最慢步數
-let maxStepGlobal = 0;        // 全域最快步數
-let currentHitStudent = null; // 當前打開中招 Modal 嘅學生
-let debugVisible = false;     // 診斷面板是否顯示
+let students = [];
+let mapOffsetX = 0;
+let currentZoom = 1;
+let minStepGlobal = 0;
+let maxStepGlobal = 0;
+let currentHitStudent = null;
+let debugVisible = false;
+
+// 拖動狀態
+let isDragging = false;
+let dragStartX = 0;
+let dragStartOffset = 0;
 
 /* ============================================================
    C. 工具函式
    ============================================================ */
-
-/**
- * 根據步數取得地形資訊
- * @param {number} step - 步數
- * @returns {object} 地形物件
- */
 function getTerrain(step) {
   for (const t of TERRAINS) {
     if (step >= t.from && step < t.to) return t;
@@ -434,30 +376,23 @@ function getTerrain(step) {
   return TERRAINS[TERRAINS.length - 1];
 }
 
-/**
- * 取得學生嘅總步數（total_exp × 10）
- * @param {object} s - 學生物件
- * @returns {number} 步數
- */
 function getStudentStep(s) {
   return Math.max(0, (s.total_exp || 0) * STEPS_PER_POINT);
 }
 
 /* ============================================================
-   D. 從 Google Sheets 抓資料
+   D. 抓資料
    ============================================================ */
 async function fetchStudents() {
   try {
     const res = await fetch(API_URL);
     const data = await res.json();
 
-    // ===== 診斷 log（F12 Console 可見） =====
     console.log('=== API 回傳 ===');
     console.log('筆數:', data.length);
     console.log('所有 id:', data.map(s => s.id));
     console.log('第一筆:', data[0]);
 
-    // ===== 過濾掉楊卓衡（16） =====
     students = data.filter(s => {
       const sid = String(s.id || '').trim();
       return sid !== '16' && sid !== '16.0';
@@ -465,14 +400,10 @@ async function fetchStudents() {
 
     console.log('過濾後學生數:', students.length);
 
-    // 顯示診斷按鈕
     document.getElementById('debugToggle').style.display = 'block';
-
     renderMap();
   } catch (err) {
     console.error('讀取失敗：', err);
-
-    // ===== 如果 API 失敗，用假資料測試 =====
     if (students.length === 0) {
       students = [
         { id:'01', name:'陳俊揚', total_exp:12, today_score:0,  repair_stage:0 },
@@ -498,15 +429,13 @@ async function fetchStudents() {
 }
 
 /* ============================================================
-   E. 渲染地圖（核心）
+   E. 渲染地圖
    ============================================================ */
 function renderMap() {
   const world = document.getElementById('mapWorld');
-  world.innerHTML = '';   // 清空舊內容
-
+  world.innerHTML = '';
   if (students.length === 0) return;
 
-  /* ---------- 1. 計算步數範圍 ---------- */
   const steps = students.map(getStudentStep);
   minStepGlobal = Math.min(...steps);
   maxStepGlobal = Math.max(...steps);
@@ -515,7 +444,6 @@ function renderMap() {
   const viewMax  = maxStepGlobal + BUFFER_AHEAD;
   const viewRange = Math.max(1, viewMax - viewMin);
 
-  /* ---------- 2. 計算地圖寬度（至少比螢幕寬） ---------- */
   const viewportW = window.innerWidth;
   const worldWidth = Math.max(
     viewRange * PIXELS_PER_STEP + 400,
@@ -523,12 +451,11 @@ function renderMap() {
   );
   world.style.width = worldWidth + 'px';
 
-  /* ---------- 3. 畫地形帶 ---------- */
+  // 地形帶
   TERRAINS.forEach(t => {
     const fromPx = Math.max(0, (t.from - viewMin) * PIXELS_PER_STEP);
     const toPx   = Math.min(worldWidth, (t.to - viewMin) * PIXELS_PER_STEP);
     if (toPx <= fromPx) return;
-
     const band = document.createElement('div');
     band.className = 'terrain-band';
     band.style.left = fromPx + 'px';
@@ -537,30 +464,27 @@ function renderMap() {
     world.appendChild(band);
   });
 
-  /* ---------- 4. 撒裝飾物 ---------- */
+  // 裝飾物
   const decoCount = Math.floor(worldWidth / 40);
   for (let i = 0; i < decoCount; i++) {
     const px = i * 40 + Math.random() * 30;
     const stepAtPx = viewMin + px / PIXELS_PER_STEP;
     const terrain = getTerrain(stepAtPx);
-
     const deco = document.createElement('div');
     deco.className = 'deco';
     deco.style.left = px + 'px';
     deco.style.top = (15 + Math.random() * 70) + '%';
     deco.style.fontSize = (1 + Math.random() * 1.5) + 'rem';
     deco.style.animationDelay = (Math.random() * 4) + 's';
-
     if (terrain.name === '草原')      deco.textContent = ['🌿','🌸','🌳','🪨'][Math.floor(Math.random()*4)];
     else if (terrain.name === '森林') deco.textContent = ['🌲','🌳','🍄','🪵'][Math.floor(Math.random()*4)];
     else if (terrain.name === '火山') deco.textContent = ['🌋','🔥','🪨','💀'][Math.floor(Math.random()*4)];
     else if (terrain.name === '雪山') deco.textContent = ['❄️','🏔️','⛄','🧊'][Math.floor(Math.random()*4)];
     else                              deco.textContent = ['🏰','⛩️','👑','✨'][Math.floor(Math.random()*4)];
-
     world.appendChild(deco);
   }
 
-  /* ---------- 5. 起點線 ---------- */
+  // 起點線
   const startLine = document.createElement('div');
   startLine.style.cssText = `
     position:absolute; left:0; top:0; width:6px; height:100%;
@@ -569,22 +493,17 @@ function renderMap() {
   `;
   world.appendChild(startLine);
 
-  /* ---------- 6. 放賽車 ---------- */
+  // 賽車
   const leaderExp = Math.max(...students.map(s => s.total_exp));
-
   students.forEach((s, idx) => {
     const step = getStudentStep(s);
     const xPx = (step - viewMin) * PIXELS_PER_STEP + 20;
-
-    // 垂直位置：用 idx 平均分佈喺 5 條水平線（避免撞車）
-    const yPercent = 20 + (idx % 5) * 14;   // 20% ~ 76%
+    const yPercent = 20 + (idx % 5) * 14;
 
     const racer = document.createElement('div');
     racer.className = 'racer';
-
     if (s.total_exp === leaderExp && leaderExp > 0) racer.classList.add('leader');
     if ((s.today_score || 0) < 0) racer.classList.add('hit');
-
     racer.style.left = xPx + 'px';
     racer.style.top  = yPercent + '%';
     racer.dataset.id = s.id;
@@ -592,27 +511,24 @@ function renderMap() {
       <span style="font-size:1.8rem;">${CAR_EMOJIS[idx % CAR_EMOJIS.length]}</span>
       <div class="label">${s.id} ${s.name}</div>
     `;
-
-    racer.onclick = () => openHitModal(s);
+    racer.onclick = (e) => { e.stopPropagation(); openHitModal(s); };
     world.appendChild(racer);
   });
 
-  /* ---------- 7. 更新 HUD ---------- */
+  // HUD
   const leader = students.reduce((a,b) => (a.total_exp > b.total_exp ? a : b));
   document.getElementById('hudLeader').textContent =
     `${leader.id} ${leader.name}（${leader.total_exp * STEPS_PER_POINT} 步）`;
 
-  /* ---------- 8. 縮放 + 置中 ---------- */
+  // 縮放 + 置中
   focusOnAll(viewMin, viewRange, worldWidth);
 
-  /* ---------- 9. 更新診斷面板（如果開咗） ---------- */
-  if (debugVisible) {
-    showRacerDebugPanel(viewMin, viewMax);
-  }
+  // 診斷
+  if (debugVisible) showRacerDebugPanel(viewMin, viewMax);
 }
 
 /* ============================================================
-   F. 縮放 + 置中（確保全部車都在畫面內）
+   F. 縮放 + 置中
    ============================================================ */
 function focusOnAll(viewMin, viewRange, worldWidth) {
   const viewportW = window.innerWidth;
@@ -624,7 +540,8 @@ function focusOnAll(viewMin, viewRange, worldWidth) {
   if (contentWidth > viewportW) {
     zoom = viewportW / contentWidth;
   }
-  zoom = Math.max(zoom, 0.5);   // 縮放不小於 0.5
+  zoom = Math.max(zoom, 0.5);
+  currentZoom = zoom;
 
   const scaledWidth = worldWidth * zoom;
   let offsetX;
@@ -639,24 +556,76 @@ function focusOnAll(viewMin, viewRange, worldWidth) {
   }
 
   mapOffsetX = offsetX;
-  world.style.transform = `translateX(${offsetX}px) scale(${zoom})`;
-  world.style.transformOrigin = 'left center';
+  applyTransform();
 
   document.getElementById('hudRange').textContent =
     `${viewMin} ~ ${viewMax} 步（縮放 ${(zoom*100).toFixed(0)}%）`;
 }
 
 /* ============================================================
-   G. 診斷面板（測試用）
+   F2. 套用 transform
    ============================================================ */
+function applyTransform() {
+  const world = document.getElementById('mapWorld');
+  world.style.transform = `translateX(${mapOffsetX}px) scale(${currentZoom})`;
+  world.style.transformOrigin = 'left center';
+}
 
-/**
- * 切換診斷面板顯示/隱藏
- */
+/* ============================================================
+   G. 拖動地圖（新增！）
+   ============================================================ */
+const viewport = document.getElementById('mapViewport');
+
+function startDrag(clientX) {
+  isDragging = true;
+  dragStartX = clientX;
+  dragStartOffset = mapOffsetX;
+  document.getElementById('mapWorld').style.transition = 'none'; // 拖動時取消過渡
+}
+
+function moveDrag(clientX) {
+  if (!isDragging) return;
+  const dx = clientX - dragStartX;
+  mapOffsetX = dragStartOffset + dx;
+  // 限制範圍
+  const world = document.getElementById('mapWorld');
+  const worldWidth = parseFloat(world.style.width) * currentZoom;
+  const viewportW = window.innerWidth;
+  const minOffset = Math.min(0, viewportW - worldWidth);
+  mapOffsetX = Math.max(minOffset, Math.min(0, mapOffsetX));
+  applyTransform();
+}
+
+function endDrag() {
+  if (!isDragging) return;
+  isDragging = false;
+  document.getElementById('mapWorld').style.transition = 'transform 0.3s ease-out';
+}
+
+// 滑鼠事件
+viewport.addEventListener('mousedown', (e) => {
+  if (e.target.classList.contains('racer')) return; // 點賽車唔拖
+  startDrag(e.clientX);
+});
+window.addEventListener('mousemove', (e) => moveDrag(e.clientX));
+window.addEventListener('mouseup', endDrag);
+
+// 觸控事件
+viewport.addEventListener('touchstart', (e) => {
+  if (e.target.classList.contains('racer')) return;
+  startDrag(e.touches[0].clientX);
+}, { passive: true });
+viewport.addEventListener('touchmove', (e) => {
+  moveDrag(e.touches[0].clientX);
+}, { passive: true });
+viewport.addEventListener('touchend', endDrag);
+
+/* ============================================================
+   H. 診斷面板
+   ============================================================ */
 function toggleDebugPanel() {
   debugVisible = !debugVisible;
   if (debugVisible) {
-    // 重新渲染地圖以觸發診斷面板
     if (students.length > 0) renderMap();
   } else {
     const panel = document.getElementById('racerDebugPanel');
@@ -665,24 +634,17 @@ function toggleDebugPanel() {
   document.getElementById('debugToggle').textContent = debugVisible ? '❌ 關閉診斷' : '🔍 診斷';
 }
 
-/**
- * 顯示診斷面板：列出所有賽車嘅 id、步數、x/y 座標
- */
 function showRacerDebugPanel(viewMin, viewMax) {
   const old = document.getElementById('racerDebugPanel');
   if (old) old.remove();
-
   const panel = document.createElement('div');
   panel.id = 'racerDebugPanel';
-
   let html = `<b style="color:#00e5ff;">🔍 賽車診斷（${students.length} 架）</b><br>`;
   html += `範圍：${viewMin} ~ ${viewMax} 步<br><hr style="border-color:#333;margin:4px 0;">`;
-
   students.forEach((s, idx) => {
     const step = getStudentStep(s);
     const xPx = (step - viewMin) * PIXELS_PER_STEP + 20;
     const yPercent = 20 + (idx % 5) * 14;
-
     html += `
       <div style="margin-bottom:3px;">
         <span style="color:#ffd700;">${s.id}</span>
@@ -692,129 +654,36 @@ function showRacerDebugPanel(viewMin, viewMax) {
       </div>
     `;
   });
-
   panel.innerHTML = html;
   document.body.appendChild(panel);
 }
 
 /* ============================================================
-   H. 中招 Modal（抽懲罰）
+   I. 中招 Modal
    ============================================================ */
-
-/**
- * 打開中招 Modal
- * @param {object} student - 學生物件
- */
 function openHitModal(student) {
   if ((student.today_score || 0) >= 0) {
     alert(`${student.name}\n今日淨分：${student.today_score || 0}\n（未中招，無需抽懲罰）`);
     return;
   }
-
   currentHitStudent = student;
   document.getElementById('hitStudentName').textContent =
     `${student.id}. ${student.name}　今日淨分：${student.today_score}`;
   document.getElementById('hitResult').style.display = 'none';
   document.getElementById('openHitBtn').style.display = 'inline-block';
-
   renderPunishmentList(Math.abs(student.today_score));
   document.getElementById('hitModal').classList.add('active');
 }
 
-/**
- * 關閉中招 Modal
- */
 function closeHitModal() {
   document.getElementById('hitModal').classList.remove('active');
   currentHitStudent = null;
 }
 
-/**
- * 渲染懲罰清單
- * @param {number} absScore - 今日淨分絕對值
- */
 function renderPunishmentList(absScore) {
   const list = document.getElementById('punishmentList');
   list.innerHTML = '';
-
   const punishments = [
     { id:1,  text:'20 下掌上壓 🧎🏻',               unlock:0 },
     { id:2,  text:'30 下波比跳 🕴🏻',               unlock:3 },
-    { id:3,  text:'清潔班房地板和黑板 🧹',          unlock:0 },
-    { id:4,  text:'清潔樓層地板和班房窗 🧹🪟',      unlock:0 },
-    { id:5,  text:'罰抄學生約章一次 📜',            unlock:3 },
-    { id:6,  text:'下星期二四沒有小息和午息',       unlock:3 },
-    { id:7,  text:'下星期一三五沒有小息和午息',     unlock:5 },
-    { id:8,  text:'抄寫鮑思高神父生平 📓',          unlock:5 },
-    { id:9,  text:'放學 T34 室休息半個鐘 🤡',       unlock:3 },
-    { id:10, text:'放學 T34 室休息 45 分鐘 🤡',     unlock:5 },
-    { id:11, text:'耶穌愛您，豁免一次 🙏',          unlock:0 },
-    { id:12, text:'在班上唱一首歌 🎤',              unlock:0 },
-    { id:13, text:'在班上跳一隻舞 🕺🏼',             unlock:0 },
-    { id:14, text:'讀一篇文章 🗣️',                  unlock:0 },
-    { id:15, text:'繪畫校徽兩個 🖍️',                unlock:0 },
-    { id:16, text:'帶領祈禱一次（聖三光榮經）🙏🏻',   unlock:0 },
-    { id:17, text:'做一條數學題 唔用計數機 📵',      unlock:0 },
-  ];
-
-  punishments.forEach(p => {
-    const item = document.createElement('div');
-    const unlocked = absScore >= p.unlock;
-    item.className = 'punishment-item' + (unlocked ? '' : ' locked');
-    item.textContent = p.text;
-    list.appendChild(item);
-  });
-}
-
-/**
- * 加權抽獎：抽出一個懲罰
- */
-function drawHitPunishment() {
-  if (!currentHitStudent) return;
-
-  const absScore = Math.abs(currentHitStudent.today_score);
-
-  const pool = [
-    { id:1,  w:25 }, { id:2,  w:25 }, { id:3,  w:20 }, { id:4,  w:20 },
-    { id:11, w:0.1 },{ id:12, w:20 }, { id:13, w:20 }, { id:14, w:25 },
-    { id:15, w:25 }, { id:16, w:25 }, { id:17, w:25 },
-  ];
-
-  if (absScore >= 3) pool.push({ id:5,w:12 },{ id:6,w:8 },{ id:8,w:10 },{ id:9,w:11 });
-  if (absScore >= 5) pool.push({ id:7,w:26 },{ id:10,w:26 });
-
-  const total = pool.reduce((s,p) => s + p.w, 0);
-  let r = Math.random() * total;
-  let picked = pool[0].id;
-  for (const p of pool) {
-    r -= p.w;
-    if (r <= 0) { picked = p.id; break; }
-  }
-
-  const texts = {
-    1:'20 下掌上壓 🧎🏻', 2:'30 下波比跳 🕴🏻', 3:'清潔班房地板和黑板 🧹',
-    4:'清潔樓層地板和班房窗 🧹🪟', 5:'罰抄學生約章一次 📜', 6:'下星期二四沒有小息和午息',
-    7:'下星期一三五沒有小息和午息', 8:'抄寫鮑思高神父生平 📓', 9:'放學 T34 室休息半個鐘 🤡',
-    10:'放學 T34 室休息 45 分鐘 🤡', 11:'耶穌愛您，豁免一次 🙏', 12:'在班上唱一首歌 🎤',
-    13:'在班上跳一隻舞 🕺🏼', 14:'讀一篇文章 🗣️', 15:'繪畫校徽兩個 🖍️', 16:'帶領祈禱一次（聖三光榮經）🙏🏻',
-    17:'做一條數學題 唔用計數機 📵',
-  };
-
-  document.getElementById('openHitBtn').style.display = 'none';
-  const result = document.getElementById('hitResult');
-  result.style.display = 'block';
-  result.textContent = '🎉 抽中：' + texts[picked];
-}
-
-/* ============================================================
-   I. 啟動
-   ============================================================ */
-window.addEventListener('load', fetchStudents);
-
-window.addEventListener('resize', () => {
-  if (students.length > 0) renderMap();
-});
-</script>
-
-</body>
-</html>
+    { id:3,  text:'清潔班房地板和
