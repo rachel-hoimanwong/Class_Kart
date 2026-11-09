@@ -686,4 +686,70 @@ function renderPunishmentList(absScore) {
   const punishments = [
     { id:1,  text:'20 下掌上壓 🧎🏻',               unlock:0 },
     { id:2,  text:'30 下波比跳 🕴🏻',               unlock:3 },
-    { id:3,  text:'清潔班房地板和
+    { id:3,  text:'清潔班房地板和黑板 🧹',          unlock:0 },
+    { id:4,  text:'清潔樓層地板和班房窗 🧹🪟',      unlock:0 },
+    { id:5,  text:'罰抄學生約章一次 📜',            unlock:3 },
+    { id:6,  text:'下星期二四沒有小息和午息',       unlock:3 },
+    { id:7,  text:'下星期一三五沒有小息和午息',     unlock:5 },
+    { id:8,  text:'抄寫鮑思高神父生平 📓',          unlock:5 },
+    { id:9,  text:'放學 T34 室休息半個鐘 🤡',       unlock:3 },
+    { id:10, text:'放學 T34 室休息 45 分鐘 🤡',     unlock:5 },
+    { id:11, text:'耶穌愛您，豁免一次 🙏',          unlock:0 },
+    { id:12, text:'在班上唱一首歌 🎤',              unlock:0 },
+    { id:13, text:'在班上跳一隻舞 🕺🏼',             unlock:0 },
+    { id:14, text:'讀一篇文章 🗣️',                  unlock:0 },
+    { id:15, text:'繪畫校徽兩個 🖍️',                unlock:0 },
+    { id:16, text:'帶領祈禱一次（聖三光榮經）🙏🏻',   unlock:0 },
+    { id:17, text:'做一條數學題 唔用計數機 📵',      unlock:0 },
+  ];
+  punishments.forEach(p => {
+    const item = document.createElement('div');
+    const unlocked = absScore >= p.unlock;
+    item.className = 'punishment-item' + (unlocked ? '' : ' locked');
+    item.textContent = p.text;
+    list.appendChild(item);
+  });
+}
+
+function drawHitPunishment() {
+  if (!currentHitStudent) return;
+  const absScore = Math.abs(currentHitStudent.today_score);
+  const pool = [
+    { id:1,  w:25 }, { id:2,  w:25 }, { id:3,  w:20 }, { id:4,  w:20 },
+    { id:11, w:0.1 },{ id:12, w:20 }, { id:13, w:20 }, { id:14, w:25 },
+    { id:15, w:25 }, { id:16, w:25 }, { id:17, w:25 },
+  ];
+  if (absScore >= 3) pool.push({ id:5,w:12 },{ id:6,w:8 },{ id:8,w:10 },{ id:9,w:11 });
+  if (absScore >= 5) pool.push({ id:7,w:26 },{ id:10,w:26 });
+  const total = pool.reduce((s,p) => s + p.w, 0);
+  let r = Math.random() * total;
+  let picked = pool[0].id;
+  for (const p of pool) {
+    r -= p.w;
+    if (r <= 0) { picked = p.id; break; }
+  }
+  const texts = {
+    1:'20 下掌上壓 🧎🏻', 2:'30 下波比跳 🕴🏻', 3:'清潔班房地板和黑板 🧹',
+    4:'清潔樓層地板和班房窗 🧹🪟', 5:'罰抄學生約章一次 📜', 6:'下星期二四沒有小息和午息',
+    7:'下星期一三五沒有小息和午息', 8:'抄寫鮑思高神父生平 📓', 9:'放學 T34 室休息半個鐘 🤡',
+    10:'放學 T34 室休息 45 分鐘 🤡', 11:'耶穌愛您，豁免一次 🙏', 12:'在班上唱一首歌 🎤',
+    13:'在班上跳一隻舞 🕺🏼', 14:'讀一篇文章 🗣️', 15:'繪畫校徽兩個 🖍️', 16:'帶領祈禱一次（聖三光榮經）🙏🏻',
+    17:'做一條數學題 唔用計數機 📵',
+  };
+  document.getElementById('openHitBtn').style.display = 'none';
+  const result = document.getElementById('hitResult');
+  result.style.display = 'block';
+  result.textContent = '🎉 抽中：' + texts[picked];
+}
+
+/* ============================================================
+   J. 啟動
+   ============================================================ */
+window.addEventListener('load', fetchStudents);
+window.addEventListener('resize', () => {
+  if (students.length > 0) renderMap();
+});
+</script>
+
+</body>
+</html>
